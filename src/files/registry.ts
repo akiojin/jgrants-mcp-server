@@ -39,8 +39,9 @@ export class FileRegistry {
 
   async loadFromDisk(): Promise<void> {
     await fs.mkdir(this.baseDir, { recursive: true });
+    let raw: string | null = null;
     try {
-      const raw = await fs.readFile(this.indexPath, "utf8");
+      raw = await fs.readFile(this.indexPath, "utf8");
       const parsed = JSON.parse(raw) as RegistryData | FileRecord[];
       const records = Array.isArray(parsed) ? parsed : parsed.records;
       if (Array.isArray(records)) {
@@ -50,6 +51,10 @@ export class FileRegistry {
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        if (error instanceof SyntaxError && raw !== null) {
+          await backupInvalidIndex(this.indexPath, raw);
+          return;
+        }
         throw error;
       }
     }
@@ -114,4 +119,17 @@ export function sanitizeFileName(name: string): string {
     .trim();
 
   return cleaned.length > 0 ? cleaned : "file";
+}
+
+async function backupInvalidIndex(indexPath: string, raw: string): Promise<void> {
+  const backupPath = path.join(
+    path.dirname(indexPath),
+    `index.invalid-${Date.now()}.json`
+  );
+  try {
+    await fs.writeFile(backupPath, raw, "utf8");
+    await fs.unlink(indexPath);
+  } catch (error) {
+    console.error("Failed to backup invalid index.json", error);
+  }
 }
