@@ -17,6 +17,11 @@ npm run build
 npm start
 ```
 
+## npxで起動（stdio）
+```bash
+npx -y @akiojin/jgrants-mcp-server
+```
+
 ## MCPツール
 - `ping`
 - `search_subsidies`
