@@ -1,0 +1,43 @@
+﻿{
+  "name": "@akiojin/jgrants-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for J-Grants public API",
+  "type": "module",
+  "license": "MIT",
+  "author": "",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CLAUDE.md",
+    "AGENTS.md"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "adm-zip": "^0.5.16",
+    "mammoth": "^1.11.0",
+    "mime-types": "^3.0.2",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/mime-types": "^3.0.1",
+    "@types/node": "^25.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

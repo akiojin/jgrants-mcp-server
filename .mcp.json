@@ -1,0 +1,12 @@
+﻿{
+  "mcpServers": {
+    "jgrants-mcp-server": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": ".",
+      "env": {
+        "JGRANTS_FILES_DIR": "./jgrants_files"
+      }
+    }
+  }
+}
