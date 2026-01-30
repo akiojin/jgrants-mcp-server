@@ -1,9 +1,14 @@
 ﻿---
-description: LLMベースのインタラクティブリリースフロー。developブランチで実行し、releaseブランチ経由でmainへPRする。
+description: LLMベースのインタラクティブリリースフロー。developブランチで実行し、releaseブランチ経由でmainへPRする（リリースはオーナーのみ）。
 ---
 
 # /release コマンド
 LLMベースのインタラクティブリリースフローです。**developブランチ起点**で実行し、releaseブランチを経由してmainへPRします。**mainへの直接PR/直接pushは禁止**です。
+
+## 権限ルール
+- releaseブランチの作成は **オーナーのみ**
+- mainへのPRは **release/* ブランチからのみ**
+- feature→develop のマージは **オーナー承認（Code Owners）が必須**
 
 ## 事前チェック
 次の条件を満たしていることを確認します。

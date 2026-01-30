@@ -1,0 +1,35 @@
+﻿name: PR Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release PR
+        run: |
+          BASE="${{ github.event.pull_request.base.ref }}"
+          HEAD="${{ github.event.pull_request.head.ref }}"
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+          OWNER="akiojin"
+
+          if [ "$BASE" != "main" ]; then
+            echo "Not targeting main; skipping."
+            exit 0
+          fi
+
+          if [[ "$HEAD" != release/* ]]; then
+            echo "ERROR: main へのPRは release/* ブランチからのみ許可されます。"
+            exit 1
+          fi
+
+          if [ "$AUTHOR" != "$OWNER" ]; then
+            echo "ERROR: release PR の作成者はオーナー($OWNER)のみ許可されます。"
+            exit 1
+          fi
