@@ -1,9 +1,10 @@
 ﻿import { promises as fs } from "node:fs";
+import { Buffer } from "node:buffer";
 import path from "node:path";
 import mime from "mime-types";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import AdmZip from "adm-zip";
 
 export type ConvertResult = {
@@ -39,15 +40,7 @@ export async function convertFileToMarkdown(
     }
 
     if (ext === ".xlsx") {
-      const workbook = xlsx.read(buffer, { type: "buffer" });
-      const markdown = workbook.SheetNames.map((name) => {
-        const sheet = workbook.Sheets[name];
-        const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 }) as Array<
-          Array<unknown>
-        >;
-        const table = rowsToMarkdown(rows);
-        return `## ${name}\n\n${table}`;
-      }).join("\n\n");
+      const markdown = await xlsxBufferToMarkdown(buffer, "##");
       return { markdown: markdown.trim() };
     }
 
@@ -65,7 +58,9 @@ export async function convertFileToMarkdown(
         const sectionHeader = `## ${entry.entryName}`;
 
         if (entryExt === ".txt") {
-          sections.push(`${sectionHeader}\n\n${normalizeText(entryBuffer.toString("utf8"))}`);
+          sections.push(
+            `${sectionHeader}\n\n${normalizeText(entryBuffer.toString("utf8"))}`
+          );
           continue;
         }
 
@@ -82,15 +77,7 @@ export async function convertFileToMarkdown(
         }
 
         if (entryExt === ".xlsx") {
-          const workbook = xlsx.read(entryBuffer, { type: "buffer" });
-          const markdown = workbook.SheetNames.map((name) => {
-            const sheet = workbook.Sheets[name];
-            const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 }) as Array<
-              Array<unknown>
-            >;
-            const table = rowsToMarkdown(rows);
-            return `### ${name}\n\n${table}`;
-          }).join("\n\n");
+          const markdown = await xlsxBufferToMarkdown(entryBuffer, "###");
           sections.push(`${sectionHeader}\n\n${markdown}`);
         }
       }
@@ -127,7 +114,9 @@ function rowsToMarkdown(rows: Array<Array<unknown>>): string {
   const separator = header.map(() => "---");
   const body = rows.slice(1).map((row) => row.map(cellToString));
 
-  const lines = [header, separator, ...body].map((row) => `| ${row.join(" | ")} |`);
+  const lines = [header, separator, ...body].map(
+    (row) => `| ${row.join(" | ")} |`
+  );
   return lines.join("\n");
 }
 
@@ -145,4 +134,50 @@ async function parsePdfText(buffer: Buffer): Promise<string> {
   } finally {
     await parser.destroy();
   }
+}
+
+async function xlsxBufferToMarkdown(
+  buffer: Buffer | Uint8Array,
+  headingPrefix: "##" | "###"
+): Promise<string> {
+  const workbook = new ExcelJS.Workbook();
+  const normalized = Buffer.from(buffer);
+  await workbook.xlsx.load(normalized as any);
+
+  const sections: string[] = [];
+  for (const sheet of workbook.worksheets) {
+    const rows: Array<Array<unknown>> = [];
+    sheet.eachRow({ includeEmpty: true }, (row) => {
+      const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+      rows.push(values.map(normalizeCellValue));
+    });
+
+    const table = rowsToMarkdown(rows);
+    if (table) {
+      sections.push(`${headingPrefix} ${sheet.name}\n\n${table}`);
+    }
+  }
+
+  return sections.join("\n\n");
+}
+
+function normalizeCellValue(value: unknown): unknown {
+  if (!value) return value;
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if (typeof record.text === "string") return record.text;
+    if (Array.isArray(record.richText)) {
+      return record.richText
+        .map((item) =>
+          typeof item === "object" && item && "text" in item
+            ? String((item as { text?: string }).text ?? "")
+            : ""
+        )
+        .join("");
+    }
+    if (typeof record.hyperlink === "string" && typeof record.text === "string") {
+      return `${record.text} (${record.hyperlink})`;
+    }
+  }
+  return value;
 }
