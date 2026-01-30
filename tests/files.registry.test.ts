@@ -31,4 +31,23 @@ describe("FileRegistry", () => {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
   });
+
+  it("recovers from invalid index.json", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "jgrants-registry-"));
+    try {
+      const indexPath = path.join(tempDir, "index.json");
+      await fs.writeFile(indexPath, "{not: \"json\"", "utf8");
+
+      const registry = new FileRegistry(tempDir, 1024 * 1024);
+      await registry.loadFromDisk();
+
+      const files = await fs.readdir(tempDir);
+      const hasBackup = files.some(
+        (name) => name.startsWith("index.invalid-") && name.endsWith(".json")
+      );
+      expect(hasBackup).toBe(true);
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+  });
 });
