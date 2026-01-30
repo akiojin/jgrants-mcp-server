@@ -1,0 +1,33 @@
+﻿name: Release Branch Guard
+
+on:
+  push:
+    branches:
+      - "release/**"
+
+permissions:
+  contents: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow only owner to create release branches
+        run: |
+          ACTOR="${{ github.actor }}"
+          OWNER="akiojin"
+          if [ "$ACTOR" != "$OWNER" ]; then
+            echo "ERROR: release ブランチの作成はオーナー($OWNER)のみ許可されます。"
+            exit 1
+          fi
+      - name: Delete unauthorized release branch
+        if: ${{ github.actor != 'akiojin' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ref = context.ref.replace('refs/heads/', '');
+            await github.rest.git.deleteRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${ref}`
+            });
