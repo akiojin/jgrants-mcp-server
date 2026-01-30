@@ -1,14 +1,14 @@
 ﻿---
-description: LLMベースのインタラクティブリリースフロー。mainブランチで実行し、バージョン更新・タグ作成・PR/マージ後のnpm公開までを支援。
+description: LLMベースのインタラクティブリリースフロー。developブランチで実行し、releaseブランチ経由でmainへPRする。
 ---
 
 # /release コマンド
-LLMベースのインタラクティブリリースフローです。**mainブランチ起点**で実行し、リリース準備から公開までを支援します。
+LLMベースのインタラクティブリリースフローです。**developブランチ起点**で実行し、releaseブランチを経由してmainへPRします。**mainへの直接PR/直接pushは禁止**です。
 
 ## 事前チェック
 次の条件を満たしていることを確認します。
 
-1. **mainブランチで作業している**
+1. **developブランチで作業している**
 2. **ワーキングツリーがクリーン**
 3. **タグが最新**
 
@@ -16,10 +16,10 @@ LLMベースのインタラクティブリリースフローです。**mainブ�
 # 現在のブランチを確認
 CURRENT_BRANCH=$(git branch --show-current)
 
-if [ "$CURRENT_BRANCH" != "main" ]; then
-  echo "エラー: /release は main ブランチで実行してください。"
+if [ "$CURRENT_BRANCH" != "develop" ]; then
+  echo "エラー: /release は develop ブランチで実行してください。"
   echo "現在のブランチ: $CURRENT_BRANCH"
-  echo "\n対処: git checkout main"
+  echo "\n対処: git checkout develop"
   exit 1
 fi
 
@@ -97,8 +97,8 @@ npm version 0.1.1 --no-git-tag-version
 - ...
 ```
 
-## Phase 5: コミット・タグ・PR
-推奨は **releaseブランチ作成 → PR → mainマージ** です。
+## Phase 5: releaseブランチ作成 → PR
+**mainへの直接PR/直接pushは禁止**です。必ずreleaseブランチ経由にしてください。
 
 ```bash
 # releaseブランチ
@@ -128,17 +128,8 @@ EOF
 )"
 ```
 
-### 直接mainで行う場合
-```bash
-git add package.json package-lock.json CHANGELOG.md
-git commit -m "chore(release): vX.Y.Z\n\nRelease version X.Y.Z\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
-
-git tag -a vX.Y.Z -m "vX.Y.Z"
-
-git push origin main --tags
-```
-
 ## Phase 6: マージ後の確認
+- release→main のPRがマージされる
 - mainマージ後、GitHub Actions `publish` が実行される
 - npm publish が成功することを確認
 - npm上のバージョンを確認
@@ -156,13 +147,13 @@ git push origin main --tags
 対応: バージョンを上げるか、既存タグを確認
 ```
 
-### main以外で実行
+### develop以外で実行
 ```
-エラー: /release は main ブランチで実行してください
-対応: git checkout main
+エラー: /release は develop ブランチで実行してください
+対応: git checkout develop
 ```
 
 ## リリースフロー概要
 ```
-releaseブランチ -> PR -> main merge -> GitHub Actions publish -> npm公開
+develop -> release/vX.Y.Z -> PR -> main -> GitHub Actions publish -> npm公開
 ```
