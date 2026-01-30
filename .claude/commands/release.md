@@ -8,7 +8,7 @@ LLMベースのインタラクティブリリースフローです。**develop�
 ## 権限ルール
 - releaseブランチの作成は **オーナーのみ**
 - mainへのPRは **release/* ブランチからのみ**
-- feature→develop のマージは **オーナー承認（Code Owners）が必須**
+- feature→develop のマージは **オーナーのみ**（レビュー不要）
 
 ## 事前チェック
 次の条件を満たしていることを確認します。
